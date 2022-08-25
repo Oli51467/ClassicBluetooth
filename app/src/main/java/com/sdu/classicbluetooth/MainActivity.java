@@ -20,6 +20,9 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -29,6 +32,8 @@ import com.rosefinches.smiledialog.SmileDialog;
 import com.rosefinches.smiledialog.SmileDialogBuilder;
 import com.rosefinches.smiledialog.enums.SmileDialogType;
 import com.sdu.classicbluetooth.adapter.DeviceAdapter;
+import com.sdu.classicbluetooth.bluetooth.BluetoothService;
+import com.sdu.classicbluetooth.bluetooth.Constants;
 import com.sdu.classicbluetooth.utils.ToastUtil;
 
 import java.lang.reflect.InvocationTargetException;
@@ -55,11 +60,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private LinearLayout layConnectingLoading;  // 等待连接
 
+    private BluetoothService bluetoothService;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Objects.requireNonNull(getSupportActionBar()).hide();
+        bluetoothService = new BluetoothService(this, mHandler);
         initLauncher();
         initView();
         requestPermission();
@@ -78,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
+    @SuppressLint("MissingPermission")
     private void initView() {
         RecyclerView rvDevice = findViewById(R.id.rv_device);
         TextView startScan = findViewById(R.id.btn_start_scan);
@@ -90,10 +99,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         deviceAdapter.setAnimationWithDefault(BaseQuickAdapter.AnimationType.SlideInRight); // 设置动画方式
         rvDevice.setLayoutManager(new LinearLayoutManager(this));
         rvDevice.setAdapter(deviceAdapter);
-
-        //TODO: item点击事件
         deviceAdapter.setOnItemClickListener((adapter, view, position) -> {
-            //连接设备
+            //连接设备 判断当前是否还是正在搜索周边设备，如果是则暂停搜索
+            if (bluetoothAdapter.isDiscovering()) {
+                bluetoothAdapter.cancelDiscovery();
+            }
             connectDevice(mList.get(position));
         });
     }
@@ -138,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this, neededPermissions.toArray(new String[0]), REQUEST_PERMISSION_CODE);
         } else {
             initBlueTooth();
+            ensureDiscoverable();
         }
     }
 
@@ -147,6 +158,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (requestCode == REQUEST_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 initBlueTooth();
+                ensureDiscoverable();
             } else {
                 ToastUtil.show(this, "您没有开启权限");
             }
@@ -180,6 +192,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         layConnectingLoading.setVisibility(View.VISIBLE);
         if (btDevice.getBondState() == BluetoothDevice.BOND_NONE) {
             createOrRemoveBond(1, btDevice);    //开始匹配
+            // TODO 连接
+            bluetoothService.connect(btDevice);
+            bluetoothService.start();
+            sendInfo("123");
         } else {
             SmileDialog dialog = new SmileDialogBuilder(this, SmileDialogType.WARNING)
                     .hideTitle(true)
@@ -281,6 +297,58 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     layConnectingLoading.setVisibility(View.GONE);//隐藏加载布局
                     break;
             }
+        }
+    }
+
+    // 蓝牙设备可被发现的时间
+    @SuppressLint("MissingPermission")
+    public void ensureDiscoverable() {
+        if (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE); // 设置蓝牙可见性，最多300秒
+            discoverIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300); //搜索300秒
+            startActivity(discoverIntent);
+        }
+    }
+
+    @SuppressLint("HandlerLeak")
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case Constants.MESSAGE_TOAST:
+                    String status = msg.getData().getString(Constants.TOAST);
+                    break;
+                case Constants.MESSAGE_DEVICE_NAME:
+                    String string = msg.getData().getString(Constants.DEVICE_NAME);
+                    break;
+                case Constants.MESSAGE_READ: //读取接收数据
+
+                    break;
+                case Constants.MESSAGE_WRITE: //发送端，正在发送的数据
+
+                    break;
+            }
+        }
+    };
+
+    /**
+     * 准备开始发送数据
+     */
+    private void sendInfo(String json) {
+        if (bluetoothService.getState() != BluetoothService.STATE_CONNECTED) {
+            ToastUtil.show(this, "连接失败");
+            Log.d("djnxyxy", json);
+            return;
+        }
+        if (json.length() > 0) {
+            byte[] send = new byte[0];
+            try {
+                send = json.getBytes();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            bluetoothService.write(send);
         }
     }
 }
