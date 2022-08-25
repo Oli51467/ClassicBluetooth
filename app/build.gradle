@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.sdu.classicbluetooth"
-        minSdk 24
+        minSdk 21
         targetSdk 32
         versionCode 1
         versionName "1.0"
@@ -37,11 +37,15 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
     //Google Material控件,以及迁移到AndroidX下一些控件的依赖
-    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.google.android.material:material:1.4.0'
+    //蓝牙扫描库
+    implementation 'no.nordicsemi.android.support.v18:scanner:1.5.0'
     //RecyclerView最好的适配器，让你的适配器一目了然，告别代码冗余
-    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.30'
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.4'
     //权限请求框架
     implementation 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.4@aar'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
     implementation "io.reactivex.rxjava2:rxjava:2.0.0"
+    //
+    implementation 'com.github.rosefinches:smile-dialog:1.0.1'
 }
