@@ -188,7 +188,8 @@ public class BluetoothService {
     @SuppressLint("MissingPermission")
     public void connectDevice(BluetoothDevice btDevice) {
         if (btDevice.getBondState() == BluetoothDevice.BOND_NONE) {
-            createOrRemoveBond(1, btDevice);    //开始匹配
+            createOrRemoveBond(1, btDevice);    // 建立匹配
+            // 开始连接
             startConnectDevice(btDevice, MY_BLUETOOTH_UUID);
         } else {
             SmileDialog dialog = new SmileDialogBuilder(appCompatActivity, SmileDialogType.WARNING)
