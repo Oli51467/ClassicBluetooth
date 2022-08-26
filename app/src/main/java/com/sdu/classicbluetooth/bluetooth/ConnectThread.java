@@ -6,6 +6,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
+import com.sdu.classicbluetooth.MainActivity;
+
 import java.io.IOException;
 import java.util.UUID;
 
@@ -20,8 +22,7 @@ public class ConnectThread extends Thread {
         this.bluetoothAdapter = bluetoothAdapter;
         this.bluetoothDevice = bluetoothDevice;
 
-        //使用临时变量
-        //bluetoothSocket是静态的
+        // 使用临时变量
         BluetoothSocket tmp = null;
 
         if (bluetoothSocket != null) {
@@ -34,7 +35,7 @@ public class ConnectThread extends Thread {
         }
         Log.d(TAG, "ConnectThread-->bluetoothSocket != null已经释放");
 
-        //1、获取bluetoothSocket
+        // 1、获取bluetoothSocket
         try {
             tmp = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(UUID.fromString(uuid));
         } catch (IOException e) {
@@ -99,9 +100,8 @@ public class ConnectThread extends Thread {
                 bluetoothSocket.close();
                 bluetoothSocket = null;
             }
-            // TODO
-            //BluetoothActivity.connect_status=false;
-            //BluetoothActivity.bluetoothService.setCurBluetoothDevice(null);
+            MainActivity.connect_status=false;
+            MainActivity.bluetoothService.setCurBluetoothDevice(null);
             Log.d(TAG, "ConnectThread:cancel-->关闭已连接的套接字释放资源");
         } catch (IOException e) {
             Log.e(TAG, "ConnectThread:cancel-->关闭已连接的套接字释放资源异常!" + e.getMessage());

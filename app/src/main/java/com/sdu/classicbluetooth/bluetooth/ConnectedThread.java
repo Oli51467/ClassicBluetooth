@@ -1,7 +1,11 @@
 package com.sdu.classicbluetooth.bluetooth;
 
+import static com.sdu.classicbluetooth.utils.MessageUtil.bytes2HexString;
+
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
+
+import com.sdu.classicbluetooth.MainActivity;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,11 +27,6 @@ public class ConnectedThread extends Thread {
     private boolean isStop = false;
     //发起蓝牙连接的线程
     private ConnectThread connectThread;
-
-    public void terminalClose(ConnectThread connectThread) {
-        isStop = true;
-        this.connectThread = connectThread;
-    }
 
     public ConnectedThread(BluetoothSocket socket) {
         mmSocket = socket;
@@ -60,10 +59,10 @@ public class ConnectedThread extends Thread {
     }
 
     public void run() {
-        //最大缓存区 存放流
+        // 最大缓存区 存放流
         byte[] buffer = new byte[1024 * 2];  //buffer store for the stream
-        //从流的read()方法中读取的字节数
-        int bytes = 0;  //bytes returned from read()
+        // 从流的read()方法中读取的字节数
+        int bytes;
 
         //持续监听输入流直到发生异常
         while (!isStop) {
@@ -155,9 +154,8 @@ public class ConnectedThread extends Thread {
             mmSocket = null;
 
             Log.w(TAG, "ConnectedThread:cancel-->成功断开连接");
-            // TODO
-            //BluetoothActivity.connect_status=false;
-            //BluetoothActivity.bluetoothService.setCurBluetoothDevice(null);
+            MainActivity.connect_status = false;
+            MainActivity.bluetoothService.setCurBluetoothDevice(null);
             return true;
 
         } catch (IOException e) {
@@ -169,26 +167,6 @@ public class ConnectedThread extends Thread {
             Log.e(TAG, "ConnectedThread:cancel-->断开连接异常！" + e.getMessage());
             return false;
         }
-    }
-
-    /**
-     * 字节数组-->16进制字符串
-     *
-     * @param b      字节数组
-     * @param length 字节数组长度
-     * @return 16进制字符串 有空格类似“0A D5 CD 8F BD E5 F8”
-     */
-    public static String bytes2HexString(byte[] b, int length) {
-        StringBuffer result = new StringBuffer();
-        String hex;
-        for (int i = 0; i < length; i++) {
-            hex = Integer.toHexString(b[i] & 0xFF);
-            if (hex.length() == 1) {
-                hex = '0' + hex;
-            }
-            result.append(hex.toUpperCase()).append(" ");
-        }
-        return result.toString();
     }
 
     private OnSendReceiveDataListener onSendReceiveDataListener;

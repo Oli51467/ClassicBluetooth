@@ -13,6 +13,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -25,7 +26,6 @@ import android.widget.TextView;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.sdu.classicbluetooth.adapter.DeviceAdapter;
 import com.sdu.classicbluetooth.bluetooth.BluetoothService;
-import com.sdu.classicbluetooth.bluetooth.Constants;
 import com.sdu.classicbluetooth.utils.ToastUtil;
 
 import java.util.ArrayList;
@@ -35,6 +35,9 @@ import java.util.Objects;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     // 权限请求码
     public static final int REQUEST_PERMISSION_CODE = 9527;
+    private static final int CONNECTED_SUCCESS_STATUE = 0x01;
+    private static final int CONNECTED_FAILURE_STATUE = 0x02;
+    public static boolean connect_status = false;
 
     // 蓝牙适配器
     private BluetoothAdapter bluetoothAdapter;
@@ -46,19 +49,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private LinearLayout layConnectingLoading;  // 等待连接
 
-    private BluetoothService bluetoothService;
+    @SuppressLint("StaticFieldLeak")
+    public static BluetoothService bluetoothService;
 
     private List<BluetoothDevice> mList;
+
+    private Context mContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Objects.requireNonNull(getSupportActionBar()).hide();
+        mContext = this;
         initLauncher();
         initView();
         bluetoothService = new BluetoothService(this, deviceAdapter, mHandler, openBluetoothLauncher, layConnectingLoading, this);
-        bluetoothService.initReceiver();
+        bluetoothService.initBroadcastReceiver();
         bluetoothService.initClick();
         requestPermission();
     }
@@ -139,19 +146,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            switch (msg.what) {
-                case Constants.MESSAGE_TOAST:
-                    String status = msg.getData().getString(Constants.TOAST);
-                    break;
-                case Constants.MESSAGE_DEVICE_NAME:
-                    String string = msg.getData().getString(Constants.DEVICE_NAME);
-                    break;
-                case Constants.MESSAGE_READ: //读取接收数据
-
-                    break;
-                case Constants.MESSAGE_WRITE: //发送端，正在发送的数据
-
-                    break;
+            if (msg.what == CONNECTED_SUCCESS_STATUE) {
+                ToastUtil.show(mContext, "设备连接成功");
+                connect_status = true;
+            } else if (msg.what == CONNECTED_FAILURE_STATUE) {
+                connect_status = false;
+                ToastUtil.show(mContext, "设备连接失败，请检查设备是否开启蓝牙");
             }
         }
     };
