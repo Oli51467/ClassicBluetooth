@@ -70,6 +70,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         requestPermission();
     }
 
+    @Override
+    protected void onResume(){
+        super.onResume();
+    }
+
+    @Override
+    protected void onRestart(){
+        super.onRestart();
+        bluetoothService.getConnectedThread().cancel();
+        bluetoothService.getConnectThread().cancel();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        bluetoothService.deleteBroadcastReceiver(); //注销广播接收
+    }
+
     private void initLauncher() {
         mList = new ArrayList<>();
         openBluetoothLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
