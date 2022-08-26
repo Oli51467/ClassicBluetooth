@@ -6,18 +6,21 @@ import android.bluetooth.BluetoothDevice;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.viewholder.BaseViewHolder;
 import com.sdu.classicbluetooth.R;
 
 import java.util.List;
+import java.util.Set;
 
 public class DeviceAdapter extends BaseQuickAdapter<BluetoothDevice, BaseViewHolder> {
 
-    public DeviceAdapter(int layoutResId, @Nullable List<BluetoothDevice> data) {
+    private final List<BluetoothDevice> mList;
+
+    public DeviceAdapter(int layoutResId, @NonNull List<BluetoothDevice> data) {
         super(layoutResId, data);
+        mList = data;
     }
 
     @SuppressLint("MissingPermission")
@@ -28,6 +31,7 @@ public class DeviceAdapter extends BaseQuickAdapter<BluetoothDevice, BaseViewHol
             helper.setText(R.id.tv_name, "UnKnown");
         } else {
             helper.setText(R.id.tv_name, item.getName());
+            if (!mList.contains(item)) mList.add(item);
         }
 
         ImageView imageView = helper.getView(R.id.iv_device_type);
@@ -47,9 +51,57 @@ public class DeviceAdapter extends BaseQuickAdapter<BluetoothDevice, BaseViewHol
         }
     }
 
+    @Override
+    public BluetoothDevice getItem(int i) {
+        if (mList == null) {
+            return null;
+        }
+        return mList.get(i);
+    }
+
+    @SuppressLint({"MissingPermission", "NotifyDataSetChanged"})
+    public void addDevice(BluetoothDevice bluetoothDevice) {
+        if (mList == null) {
+            return;
+        }
+        if (!mList.contains(bluetoothDevice)) {
+            if (bluetoothDevice.getName() != null) {
+                mList.add(bluetoothDevice);
+            }
+        }
+        notifyDataSetChanged();   //刷新
+    }
+
+    /**
+     * 获取已绑定设备
+     */
+    @SuppressLint("MissingPermission")
+    public void getBondedDevice(Set<BluetoothDevice> bondedDevices) {
+        if (bondedDevices.size() > 0) { //  如果获取的结果大于0，则开始逐个解析
+            for (BluetoothDevice device : bondedDevices) {
+                if (!mList.contains(device) && device.getName() != null) {  // 防止重复添加
+                    mList.add(device);
+                }
+            }
+        }
+    }
+
+    public void removeDevice(BluetoothDevice device) {
+        mList.remove(device);
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void clear() {
+        if (mList != null) {
+            mList.clear();
+        }
+        notifyDataSetChanged(); //刷新
+    }
+
     /**
      * 根据类型设置图标
-     * @param type 类型码
+     *
+     * @param type      类型码
      * @param imageView 图标
      */
     private void getDeviceType(int type, ImageView imageView) {
